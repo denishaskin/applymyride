@@ -63,6 +63,7 @@ angular.module('applyMyRideApp')
         localStorage.clear();
         delete $scope.email;
         delete planService.email;
+        planService.killEtaChecker();
         $window.location.href = "#/";
         $window.location.reload();
         planService.to = '';

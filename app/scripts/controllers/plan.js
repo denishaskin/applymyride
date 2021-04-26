@@ -16,7 +16,6 @@ function($scope, $http, $routeParams, $location, planService, util, flash, usSpi
       $scope.showMap = false;
     }
   }
-
   eightAm.setSeconds(0);
   eightAm.setMinutes(0);
   eightAm.setHours(8);
@@ -69,6 +68,7 @@ function($scope, $http, $routeParams, $location, planService, util, flash, usSpi
   $scope.showAllPurposes = false;
   $scope.backToConfirm = planService.backToConfirm;
   $scope.loggedIn = !!planService.email;
+  $scope.tripId = planService.tripId
 
   $scope.toDefault = countryFilter( localStorage.getItem('last_destination') || '');
   $scope.to = countryFilter( planService.to || '');
@@ -81,8 +81,11 @@ function($scope, $http, $routeParams, $location, planService, util, flash, usSpi
 
   //plan/confirm bus options selected-tab placeholder
   $scope.selectedBusOption = planService.selectedBusOption || [0,0];
-
-
+  if ($scope.step === 'transit') {
+    planService.getUserNotificationDefaults($http).then(() => {
+      $scope.fixedRouteReminderPrefs = planService.syncFixedRouteNotifications(null, new Date(planService.fromDate))
+    })
+  }
 
   $scope.reset = function() {
     planService.reset();
@@ -159,7 +162,28 @@ function($scope, $http, $routeParams, $location, planService, util, flash, usSpi
     $scope.step = 'rebook';
     $location.path('/plan/rebook');
   };
-  $scope.cancelThisOrRailTrip = function() {
+
+  $scope.updateTransitTripReminders = function($event) {
+    $event.preventDefault()
+    // build new trip details object
+    const oldNotifications = $scope.transitTripDetails || {}
+    const tripDetails = {
+      notification_preferences: {
+        ...oldNotifications,
+        fixed_route: $scope.fixedRouteReminderPrefs.reminders
+      }
+    }
+    // grab trip id(s) and build update trip request object
+    const updateTripRequest = {trip: planService.tripId, details: tripDetails}
+    const planPromise = planService.updateTripDetails($http, updateTripRequest)
+      planPromise.then(function(results) {
+        $scope.transitTripDetails = results.data.trip[0].details.notification_preferences
+        $scope.fixedRouteReminderPrefs = planService.syncFixedRouteNotifications($scope.transitTripDetails, new Date(planService.fromDate))
+        bootbox.alert("Trip notification preferences updated!")
+      })
+  }
+
+  $scope.cancelThisBusOrRailTrip = function() {
     usSpinnerService.spin('spinner-1');
     var cancelRequest = {bookingcancellation_request: []};
     var leg1, leg2;
@@ -1651,13 +1675,18 @@ function($scope, $http, $routeParams, $location, planService, util, flash, usSpi
       $scope.hasTransit = $scope.transitInfos.length > 0;
       $scope.hasWalk = $scope.walkItineraries.length > 0;
 
-      const firstItinerary = $scope.transitItineraries[0][0]
-      const firstTransit = firstItinerary.json_legs.find(leg => leg.mode === 'BUS')
-      $scope.transitRoute = firstTransit ? firstTransit.route : undefined
-
+      // If itinerary results is 0, return no results
       if($scope.paratransitItineraries.length < 1 && $scope.transitItineraries.length < 1 && $scope.walkItineraries.length < 1 && !$scope.hasUber && !$scope.hasTaxi){
         $scope.noresults = true;
       }
+
+      // Check if Transit Itineraries exist before finding the name of the transit route
+      if ($scope.transitItineraries && $scope.transitItineraries.length > 0) {
+        const firstItinerary = $scope.transitItineraries[0][0]
+        const firstTransit = firstItinerary.json_legs.find(leg => leg.mode === 'BUS') // check to see what happens if leg.mode doesn't exist
+        $scope.transitRoute = firstTransit ? firstTransit.route : undefined
+      }
+
       $scope.$watch('selectedBusOption', function(n){
         if(n && n.length && typeof n === 'object'){
           planService.selectedBusOption = n;
@@ -2097,6 +2126,9 @@ function($scope, $http, $routeParams, $location, planService, util, flash, usSpi
     }
   );
 
+  $scope.$on("$destroy", function () {
+    planService.killEtaChecker();
+  });
 
 }
 ]);

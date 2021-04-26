@@ -693,6 +693,37 @@ ul.bus-nav-tabs.nav-tabs {
   }
 }
 
+.card {
+  border: 1px solid #E4E4E4;
+}
+
 #itinerary .row.live-trip {
   background-color: $live-yellow;
+}
+
+#trip-notification-prefs {
+  padding: 1em 1em 0 1em;
+
+  .trip-notif-form-group {
+    display: flex;
+    align-items: center;
+    margin: 1em 0;
+  }
+
+  label.form-check-label {
+    margin: 0;
+  }
+  label.form-check-label.disabled {
+    margin: 0;
+    color: lightgrey;
+  }
+  input.form-check-input {
+    margin: 0 4px 0;
+    width: 30px;
+    height: 30px;
+  }
+
+  button.btn.btn-primary {
+    margin: 1em 0;
+  }
 }

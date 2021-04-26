@@ -362,6 +362,8 @@
       .col-xs-12.col-sm-8.col-sm-offset-2.text-left{style: 'color: red'}
         Please enter only valid email addresses
 
+  .row.unstuck-foot{style: 'margin-top: 1.5em;'}
+    .col-md-8.col-md-offset-2.col-xs-12.card{ng:{include:"'views/itinerary-notification.html'", show: 'mode === "mode_transit"'}}
   .row.unstuck-foot.btn-spacing{style: 'margin-top: 1em;'}
     .col-md-8.col-md-offset-2.col-xs-12
       %a.btn.btn-primary.btn-block{href: "", ng: {click: 'toggleEmail($event);', hide: 'tripCancelled'}}
